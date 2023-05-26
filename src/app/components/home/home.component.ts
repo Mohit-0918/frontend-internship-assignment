@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { debounceTime, filter } from 'rxjs';
+import { BookService } from 'src/app/core/services/book.service';
 
 @Component({
   selector: 'front-end-internship-assignment-home',
@@ -8,11 +9,13 @@ import { debounceTime, filter } from 'rxjs';
   styleUrls: ['./home.component.scss'],
 })
 export class HomeComponent implements OnInit {
-  bookSearch: FormControl;
+  searchControl: FormControl = new FormControl();
 
-  constructor() {
-    this.bookSearch = new FormControl('');
-  }
+  searchText: string = '';
+  currentPage: number = 1;
+  books: any[] = [];
+
+  constructor(public bookSearch: BookService) { }
 
   trendingSubjects: Array<any> = [
     { name: 'JavaScript' },
@@ -23,11 +26,37 @@ export class HomeComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.bookSearch.valueChanges
+    this.searchBooks();
+    this.searchControl.valueChanges
       .pipe(
         debounceTime(300),
       ).
       subscribe((value: string) => {
+        this.searchText = value; // Update the search text
+        this.currentPage = 1; // Reset the current page
+        this.searchBooks(); // Perform the search
       });
+  }
+  searchBooks() {
+    this.bookSearch.searchBooks(this.searchText, this.currentPage)
+      .subscribe((data: any) => {
+        this.books = data.docs;
+      });
+  }
+  nextPage() {
+    this.currentPage++;
+    this.searchBooks();
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.searchBooks();
+    }
+  }
+
+  clearSearch() {
+    this.searchText = '';
+    this.searchBooks();
   }
 }
